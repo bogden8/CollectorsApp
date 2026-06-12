@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { db } from '../db'
+import Icon from '../icons'
 
 const EMOJI_OPTIONS = ['🎮', '👟', '📀', '🎵', '📚', '🃏', '🏆', '🎨', '🧸', '⌚', '📷', '🎸']
 
@@ -61,108 +62,66 @@ function CreateCollection({ onNavigate }) {
   }
 
   return (
-    <div style={{ maxWidth: 480, margin: '0 auto', padding: '16px' }}>
+    <div className="app" data-screen-label="Create Collection">
+
+      <header className="topbar">
+        <button className="iconbtn iconbtn--bare" onClick={() => step === 1 ? onNavigate('home') : setStep(1)}><Icon.back /></button>
+        <div className="topbar__titles">
+          <span className="kicker">step {step} of 2</span>
+          <h1 className="title title--sm">{step === 1 ? 'New collection' : 'Choose fields'}</h1>
+        </div>
+      </header>
 
       {step === 1 && (
-        <div>
-          <button onClick={() => onNavigate('home')}>← Back</button>
-          <h2 style={{ margin: '16px 0 8px' }}>Name your collection</h2>
-
-          <p style={{ marginBottom: 16, color: '#666' }}>Pick an icon</p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
-            {EMOJI_OPTIONS.map(e => (
-              <button
-                key={e}
-                onClick={() => setIcon(e)}
-                style={{
-                  fontSize: 28,
-                  padding: 8,
-                  border: icon === e ? '2px solid #7F77DD' : '1px solid #ddd',
-                  borderRadius: 8,
-                  background: icon === e ? '#EEEDFE' : 'white',
-                  cursor: 'pointer'
-                }}
-              >
-                {e}
-              </button>
-            ))}
+        <>
+          <div className="field-block">
+            <label className="label">Pick an icon</label>
+            <div className="emoji-grid">
+              {EMOJI_OPTIONS.map(e => (
+                <button key={e} className={'emoji-btn' + (icon === e ? ' emoji-btn--on' : '')} onClick={() => setIcon(e)}>{e}</button>
+              ))}
+            </div>
           </div>
 
-          <input
-            type="text"
-            placeholder="e.g. My PS2 Games"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            style={{ width: '100%', padding: 12, fontSize: 16, borderRadius: 8, border: '1px solid #ddd', marginBottom: 12 }}
-          />
+          <div className="field-block">
+            <label className="label">Name</label>
+            <input className="input" type="text" placeholder="e.g. My PS2 Games" value={name} onChange={e => setName(e.target.value)} />
+          </div>
 
-          <input
-            type="text"
-            placeholder="Currency symbol e.g. € $ RON"
-            value={currency}
-            onChange={e => setCurrency(e.target.value)}
-            style={{ width: '100%', padding: 12, fontSize: 16, borderRadius: 8, border: '1px solid #ddd', marginBottom: 24 }}
-          />
+          <div className="field-block">
+            <label className="label">Currency symbol</label>
+            <input className="input" type="text" placeholder="€  $  RON" value={currency} onChange={e => setCurrency(e.target.value)} />
+          </div>
 
-          <button
-            onClick={() => name.trim() && setStep(2)}
-            style={{
-              width: '100%', padding: 14, background: '#534AB7', color: 'white',
-              border: 'none', borderRadius: 8, fontSize: 16, cursor: 'pointer',
-              opacity: name.trim() ? 1 : 0.5
-            }}
-          >
-            Next → Choose Fields
+          <button className="btn btn--primary btn--block" disabled={!name.trim()} onClick={() => name.trim() && setStep(2)}>
+            Next — choose fields
           </button>
-        </div>
+        </>
       )}
 
       {step === 2 && (
-        <div>
-          <button onClick={() => setStep(1)}>← Back</button>
-          <h2 style={{ margin: '16px 0 4px' }}>Choose your fields</h2>
-          <p style={{ color: '#666', marginBottom: 16 }}>
-            You can change these later. Name and Status are always on.
-          </p>
+        <>
+          <p className="note note--tight">You can change these later. Name and Status are always on.</p>
 
-          <div style={{ background: '#f5f5f5', borderRadius: 8, padding: '10px 14px', marginBottom: 8 }}>
-            <span style={{ color: '#999' }}>✅ Name — always on</span>
+          <div className="locked"><Icon.check className="ic--sm" /><span>Name — always on</span></div>
+          <div className="locked"><Icon.check className="ic--sm" /><span>Status (owned / wishlist / sold / borrowed) — always on</span></div>
+
+          <div className="list">
+            {AVAILABLE_FIELDS.map(field => {
+              const on = enabledFields.includes(field.key)
+              return (
+                <div key={field.key} className={'toggle' + (on ? ' toggle--on' : '')} onClick={() => toggleField(field.key)}>
+                  <span className="toggle__label">{field.label}</span>
+                  <span className="toggle__box"><Icon.check className="ic--sm" /></span>
+                </div>
+              )
+            })}
           </div>
-          <div style={{ background: '#f5f5f5', borderRadius: 8, padding: '10px 14px', marginBottom: 16 }}>
-            <span style={{ color: '#999' }}>✅ Status (owned / wishlist / sold / borrowed) — always on</span>
-          </div>
 
-          {AVAILABLE_FIELDS.map(field => (
-            <div
-              key={field.key}
-              onClick={() => toggleField(field.key)}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '12px 14px', marginBottom: 6, borderRadius: 8, cursor: 'pointer',
-                border: '1px solid',
-                borderColor: enabledFields.includes(field.key) ? '#7F77DD' : '#ddd',
-                background: enabledFields.includes(field.key) ? '#EEEDFE' : 'white',
-              }}
-            >
-              <span style={{ fontSize: 15 }}>{field.label}</span>
-              <span style={{ fontSize: 20 }}>
-                {enabledFields.includes(field.key) ? '☑' : '☐'}
-              </span>
-            </div>
-          ))}
-
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            style={{
-              width: '100%', padding: 14, background: '#534AB7', color: 'white',
-              border: 'none', borderRadius: 8, fontSize: 16, cursor: 'pointer',
-              marginTop: 16
-            }}
-          >
-            {saving ? 'Creating...' : `Create "${name}" ${icon}`}
+          <button className="btn btn--primary btn--block" disabled={saving} onClick={handleSave}>
+            {saving ? 'Creating…' : `Create “${name}” ${icon}`}
           </button>
-        </div>
+        </>
       )}
 
     </div>

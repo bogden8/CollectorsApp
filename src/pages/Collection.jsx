@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { db } from '../db'
+import Icon from '../icons'
 
 function Collection({ collectionId, onNavigate }) {
   const [collection, setCollection] = useState(null)
@@ -35,8 +36,8 @@ function Collection({ collectionId, onNavigate }) {
     onNavigate('home')
   }
 
-  if (loading) return <div style={{ padding: 16 }}>Loading...</div>
-  if (!collection) return <div style={{ padding: 16 }}>Collection not found</div>
+  if (loading) return <div className="loading">Loading…</div>
+  if (!collection) return <div className="loading">Collection not found</div>
 
   const owned    = items.filter(i => i.status === 'owned')
   const wishlist = items.filter(i => i.status === 'wishlist')
@@ -71,94 +72,57 @@ function Collection({ collectionId, onNavigate }) {
     return 0
   })
 
-  const statusColors = {
-    owned:    '#1D9E75',
-    wishlist: '#7F77DD',
-    sold:     '#888',
-    borrowed: '#F5A623'
-  }
-
   const chip = (label, value, current, setter) => (
     <button
       key={value}
+      className={'chip' + (current === value ? ' chip--on' : '')}
       onClick={() => setter(value)}
-      style={{
-        padding: '6px 12px', borderRadius: 20, border: '1px solid',
-        borderColor: current === value ? '#7F77DD' : '#ddd',
-        background: current === value ? '#EEEDFE' : 'white',
-        color: current === value ? '#534AB7' : '#666',
-        cursor: 'pointer', fontSize: 12, whiteSpace: 'nowrap'
-      }}
     >
       {label}
     </button>
   )
 
+  const money = n => `${n.toFixed(2)}${collection.currency}`
+
   return (
-    <div style={{ maxWidth: 480, margin: '0 auto', padding: 16 }}>
+    <div className="app" data-screen-label="Collection">
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-        <button onClick={() => onNavigate('home')} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer' }}>←</button>
-        <span style={{ fontSize: 28 }}>{collection.icon}</span>
-        <h1 style={{ fontSize: 20, fontWeight: 500, flex: 1 }}>{collection.name}</h1>
-        <button
-          onClick={() => onNavigate('editCollection', collection.id)}
-          style={{ background: 'none', border: '1px solid #ddd', borderRadius: 8, padding: '6px 12px', fontSize: 13, cursor: 'pointer', color: '#666' }}
-        >
-          ✏️ Edit
-        </button>
-        <button
-          onClick={handleDelete}
-          style={{ background: 'none', border: '1px solid #ffcccc', borderRadius: 8, padding: '6px 12px', fontSize: 13, cursor: 'pointer', color: '#e74c3c' }}
-        >
-          🗑
-        </button>
-      </div>
+      <header className="topbar">
+        <button className="iconbtn iconbtn--bare" onClick={() => onNavigate('home')}><Icon.back /></button>
+        <span className="crumb-emoji">{collection.icon}</span>
+        <h1 className="title title--sm grow">{collection.name}</h1>
+        <div className="topbar__actions">
+          <button className="iconbtn" title="Edit" onClick={() => onNavigate('editCollection', collection.id)}><Icon.edit /></button>
+          <button className="iconbtn iconbtn--danger" title="Delete" onClick={handleDelete}><Icon.trash /></button>
+        </div>
+      </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 20 }}>
-        <div style={{ background: '#f5f5f5', borderRadius: 8, padding: 12 }}>
-          <div style={{ fontSize: 11, color: '#999', marginBottom: 4 }}>OWNED</div>
-          <div style={{ fontSize: 22, fontWeight: 500 }}>{owned.length}</div>
-        </div>
-        <div style={{ background: '#f5f5f5', borderRadius: 8, padding: 12 }}>
-          <div style={{ fontSize: 11, color: '#999', marginBottom: 4 }}>WISHLIST</div>
-          <div style={{ fontSize: 22, fontWeight: 500 }}>{wishlist.length}</div>
-        </div>
-        <div style={{ background: '#f5f5f5', borderRadius: 8, padding: 12 }}>
-          <div style={{ fontSize: 11, color: '#999', marginBottom: 4 }}>TOTAL PAID</div>
-          <div style={{ fontSize: 22, fontWeight: 500 }}>{totalPaid.toFixed(2)}{collection.currency}</div>
-        </div>
-        <div style={{ background: '#f5f5f5', borderRadius: 8, padding: 12 }}>
-          <div style={{ fontSize: 11, color: '#999', marginBottom: 4 }}>EST. VALUE</div>
-          <div style={{ fontSize: 22, fontWeight: 500 }}>{totalValue.toFixed(2)}{collection.currency}</div>
-        </div>
+      <div className="statgrid">
+        <div className="stat"><div className="stat__l">Owned</div><div className="stat__n">{owned.length}</div></div>
+        <div className="stat"><div className="stat__l">Wishlist</div><div className="stat__n">{wishlist.length}</div></div>
+        <div className="stat"><div className="stat__l">Total Paid</div><div className="stat__n">{money(totalPaid)}</div></div>
+        <div className="stat"><div className="stat__l">Est. Value</div><div className="stat__n">{money(totalValue)}</div></div>
         {sold.length > 0 && (
-          <div style={{ background: '#f5f5f5', borderRadius: 8, padding: 12 }}>
-            <div style={{ fontSize: 11, color: '#999', marginBottom: 4 }}>SOLD FOR</div>
-            <div style={{ fontSize: 22, fontWeight: 500 }}>{totalSold.toFixed(2)}{collection.currency}</div>
-          </div>
+          <div className="stat"><div className="stat__l">Sold For</div><div className="stat__n">{money(totalSold)}</div></div>
         )}
         {borrowed.length > 0 && (
-          <div style={{ background: '#FFF3CD', borderRadius: 8, padding: 12 }}>
-            <div style={{ fontSize: 11, color: '#999', marginBottom: 4 }}>BORROWED OUT</div>
-            <div style={{ fontSize: 22, fontWeight: 500 }}>{borrowed.length}</div>
-          </div>
+          <div className="stat stat--accent"><div className="stat__l">Borrowed Out</div><div className="stat__n">{borrowed.length}</div></div>
         )}
       </div>
 
-      <input
-        type="text"
-        placeholder="Search by name, platform, location, tag..."
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-        style={{
-          width: '100%', padding: 10, fontSize: 14, borderRadius: 8,
-          border: '1px solid #ddd', marginBottom: 10, boxSizing: 'border-box'
-        }}
-      />
+      <div className="search">
+        <Icon.search className="ic--sm" />
+        <input
+          className="input"
+          type="text"
+          placeholder="Search name, platform, location, tag…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+      </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none' }}>
+      <div className="filterbar">
+        <div className="chips noscroll grow">
           {chip('All', 'all', filterStatus, setFilterStatus)}
           {chip('Owned', 'owned', filterStatus, setFilterStatus)}
           {chip('Wishlist', 'wishlist', filterStatus, setFilterStatus)}
@@ -166,21 +130,18 @@ function Collection({ collectionId, onNavigate }) {
           {chip('Borrowed', 'borrowed', filterStatus, setFilterStatus)}
         </div>
         <button
+          className={'iconbtn' + (showFilters ? ' toggle--on' : '')}
+          title="Sort"
           onClick={() => setShowFilters(f => !f)}
-          style={{
-            marginLeft: 8, padding: '6px 10px', borderRadius: 8, border: '1px solid #ddd',
-            background: showFilters ? '#EEEDFE' : 'white', color: showFilters ? '#534AB7' : '#666',
-            cursor: 'pointer', fontSize: 12, whiteSpace: 'nowrap'
-          }}
         >
-          Sort ↕
+          <Icon.sort />
         </button>
       </div>
 
       {showFilters && (
-        <div style={{ background: '#f9f9f9', borderRadius: 8, padding: 12, marginBottom: 12 }}>
-          <p style={{ fontSize: 12, color: '#999', marginBottom: 8 }}>Sort by</p>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <div className="card card--pad">
+          <p className="section-label">Sort by</p>
+          <div className="chips chips--wrap">
             {chip('Date Added', 'createdAt', sortBy, setSortBy)}
             {chip('Name', 'name', sortBy, setSortBy)}
             {chip('Price Paid', 'pricePaid', sortBy, setSortBy)}
@@ -190,64 +151,40 @@ function Collection({ collectionId, onNavigate }) {
       )}
 
       {displayed.length === 0 && items.length > 0 && (
-        <div style={{ textAlign: 'center', padding: '30px 0', color: '#999' }}>
-          <p>No items match your search or filter</p>
-        </div>
+        <div className="empty"><p className="empty__sub">No items match your search or filter</p></div>
       )}
 
       {items.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>🎁</div>
-          <p style={{ marginBottom: 4 }}>No items yet</p>
-          <p style={{ fontSize: 13 }}>Tap + to get started</p>
+        <div className="empty">
+          <div className="empty__emoji">🎁</div>
+          <p className="empty__title">No items yet</p>
+          <p className="empty__sub">Tap + to add your first one</p>
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingBottom: 80 }}>
+      <div className="list">
         {displayed.map(item => (
-          <div
-            key={item.id}
-            onClick={() => onNavigate('item', item.id)}
-            style={{
-              background: 'white', border: '1px solid #eee', borderRadius: 10,
-              padding: 14, cursor: 'pointer', display: 'flex',
-              alignItems: 'center', gap: 12,
-              borderLeft: `4px solid ${statusColors[item.status] || '#ddd'}`
-            }}
-          >
-            {item.photo && (
-              <img src={item.photo} alt={item.name}
-                style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6 }} />
-            )}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 500, fontSize: 15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {item.isFavorite && '⭐ '}{item.name}
+          <div key={item.id} className="item" data-status={item.status} onClick={() => onNavigate('item', item.id)}>
+            {item.photo
+              ? <img className="item__thumb" src={item.photo} alt={item.name} />
+              : <div className="item__thumb item__thumb--ph"><Icon.box className="ic--sm" /></div>}
+            <div className="item__body">
+              <div className="item__name">
+                {item.isFavorite && <span className="fav"><Icon.star /></span>}
+                {item.name}
               </div>
-              <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>
+              <div className="item__meta">
                 {item.platform && <span>{item.platform} · </span>}
-                <span style={{ textTransform: 'capitalize' }}>{item.status}</span>
+                <span className="cap">{item.status}</span>
                 {item.pricePaid != null && <span> · {item.pricePaid}{collection.currency}</span>}
               </div>
-              {item.location && (
-                <div style={{ fontSize: 11, color: '#bbb', marginTop: 2 }}>📍 {item.location}</div>
-              )}
+              {item.location && <div className="item__loc">📍 {item.location}</div>}
             </div>
-            <span style={{ color: '#ccc' }}>›</span>
+            <Icon.chev className="chev" />
           </div>
         ))}
       </div>
 
-      <button
-        onClick={() => onNavigate('addItem', collectionId)}
-        style={{
-          position: 'fixed', bottom: 24, right: 24,
-          background: '#534AB7', color: 'white', border: 'none',
-          borderRadius: 50, width: 56, height: 56,
-          fontSize: 28, cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-        }}
-      >
-        +
-      </button>
 
     </div>
   )

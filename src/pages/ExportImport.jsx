@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { db } from '../db'
+import Icon from '../icons'
 
 function ExportImport({ onNavigate }) {
   const [importing, setImporting] = useState(false)
@@ -73,78 +74,54 @@ function ExportImport({ onNavigate }) {
   }
 
   return (
-    <div style={{ maxWidth: 480, margin: '0 auto', padding: 16 }}>
+    <div className="app" data-screen-label="Export / Import">
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-        <button
-          onClick={() => onNavigate('home')}
-          style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer' }}
-        >←</button>
-        <h1 style={{ fontSize: 20, fontWeight: 500 }}>Export / Import</h1>
-      </div>
+      <header className="topbar">
+        <button className="iconbtn iconbtn--bare" onClick={() => onNavigate('home')}><Icon.back /></button>
+        <div className="topbar__titles">
+          <span className="kicker">keep it safe</span>
+          <h1 className="title title--sm">Backup &amp; restore</h1>
+        </div>
+      </header>
 
       {message && (
-        <div style={{
-          padding: 12, borderRadius: 8, marginBottom: 20, fontSize: 14,
-          background: message.type === 'success' ? '#E1F5EE' : '#fff0f0',
-          color: message.type === 'success' ? '#0F6E56' : '#e74c3c',
-          border: `1px solid ${message.type === 'success' ? '#9FE1CB' : '#ffcccc'}`
-        }}>
-          {message.type === 'success' ? '✅ ' : '❌ '}{message.text}
+        <div className={'alert ' + (message.type === 'success' ? 'alert--success' : 'alert--error')}>
+          {message.type === 'success' ? <Icon.check className="ic--sm" /> : <Icon.x className="ic--sm" />}
+          <span>{message.text}</span>
         </div>
       )}
 
-      <div style={{ background: 'white', border: '1px solid #eee', borderRadius: 12, padding: 20, marginBottom: 16 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>📤 Export Backup</h2>
-        <p style={{ fontSize: 14, color: '#666', marginBottom: 16, lineHeight: 1.5 }}>
-          Downloads a JSON file with all your collections and items. Save it somewhere safe — your phone's Downloads folder, Google Drive, or email it to yourself.
-        </p>
-        <button
-          onClick={handleExport}
-          style={{
-            width: '100%', padding: 12, background: '#534AB7', color: 'white',
-            border: 'none', borderRadius: 8, fontSize: 15, cursor: 'pointer'
-          }}
-        >
-          Download Backup
-        </button>
+      <div className="card card--pad card--stack">
+        <div className="card-head">
+          <Icon.download />
+          <span className="help-h">Export backup</span>
+        </div>
+        <p className="note">Downloads a JSON file with all your collections and items. Save it somewhere safe — your phone’s Downloads folder, Google Drive, or email it to yourself.</p>
+        <button className="btn btn--primary btn--block" onClick={handleExport}>Download backup</button>
       </div>
 
-      <div style={{ background: 'white', border: '1px solid #eee', borderRadius: 12, padding: 20, marginBottom: 16 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>📥 Import Backup</h2>
-        <p style={{ fontSize: 14, color: '#666', marginBottom: 8, lineHeight: 1.5 }}>
-          Restore from a previously exported backup file.
-        </p>
-        <div style={{
-          background: '#fff8e6', border: '1px solid #ffe099', borderRadius: 8,
-          padding: 10, marginBottom: 16, fontSize: 13, color: '#856404'
-        }}>
-          ⚠️ This will replace all current data. Export first if you want to keep it.
+      <div className="card card--pad card--stack">
+        <div className="card-head">
+          <Icon.upload />
+          <span className="help-h">Import backup</span>
         </div>
-        <label style={{
-          display: 'block', width: '100%', padding: 12, background: 'white',
-          border: '1px solid #534AB7', borderRadius: 8, fontSize: 15,
-          cursor: 'pointer', textAlign: 'center', color: '#534AB7',
-          boxSizing: 'border-box'
-        }}>
-          {importing ? 'Importing...' : 'Choose Backup File'}
-          <input
-            type="file"
-            accept=".json"
-            onChange={handleImport}
-            disabled={importing}
-            style={{ display: 'none' }}
-          />
+        <p className="note">Restore from a previously exported backup file.</p>
+        <div className="alert alert--warn">
+          <span>⚠️ This will replace all current data. Export first if you want to keep it.</span>
+        </div>
+        <label className="btn btn--outline btn--block">
+          {importing ? 'Importing…' : 'Choose backup file'}
+          <input type="file" accept=".json" onChange={handleImport} disabled={importing} hidden />
         </label>
       </div>
 
-      <div style={{ background: '#f9f9f9', borderRadius: 12, padding: 16 }}>
-        <h2 style={{ fontSize: 14, fontWeight: 500, marginBottom: 8, color: '#666' }}>💡 Tips</h2>
-        <ul style={{ fontSize: 13, color: '#888', paddingLeft: 16, lineHeight: 1.8 }}>
+      <div className="tip-card">
+        <span className="help-h">💡 Tips</span>
+        <ul className="tip-list">
           <li>Export regularly so you never lose your data</li>
           <li>Use export to move your collection to a new device</li>
           <li>Keep backups in Google Drive or Dropbox for safety</li>
-          <li>The backup file is plain JSON — you can open it in any text editor</li>
+          <li>The backup file is plain JSON — open it in any text editor</li>
         </ul>
       </div>
 

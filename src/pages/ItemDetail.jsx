@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { db } from '../db'
 import QRCode from 'qrcode'
+import Icon from '../icons'
 
 function ItemDetail({ itemId, onNavigate }) {
   const [item, setItem] = useState(null)
@@ -22,9 +23,9 @@ function ItemDetail({ itemId, onNavigate }) {
   useEffect(() => {
     if (item && qrRef.current) {
       QRCode.toCanvas(qrRef.current, `collector-item:${item.id}:${item.name}`, {
-        width: 180,
-        margin: 2,
-        color: { dark: '#534AB7', light: '#ffffff' }
+        width: 200,
+        margin: 1,
+        color: { dark: '#1b1613', light: '#f2e7d8' }
       })
     }
   }, [item])
@@ -51,74 +52,45 @@ function ItemDetail({ itemId, onNavigate }) {
     `)
   }
 
-  if (loading) return <div style={{ padding: 16 }}>Loading...</div>
-  if (!item) return <div style={{ padding: 16 }}>Item not found</div>
+  if (loading) return <div className="loading">Loading…</div>
+  if (!item) return <div className="loading">Item not found</div>
 
-  const statusColor = {
-    owned:    '#1D9E75',
-    wishlist: '#7F77DD',
-    sold:     '#888',
-    borrowed: '#F5A623'
-  }
-
-  const field = (label, value) => value ? (
-    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
-      <span style={{ fontSize: 13, color: '#999' }}>{label}</span>
-      <span style={{ fontSize: 14, fontWeight: 500, maxWidth: '60%', textAlign: 'right' }}>{value}</span>
+  const field = (label, value, mod = '') => value ? (
+    <div className={'field' + (mod ? ' ' + mod : '')}>
+      <span className="field__l">{label}</span>
+      <span className="field__v">{value}</span>
     </div>
   ) : null
 
+  const profit = item.pricePaid && item.priceSold ? (item.priceSold - item.pricePaid) : null
+
   return (
-    <div style={{ maxWidth: 480, margin: '0 auto', padding: 16, paddingBottom: 80 }}>
+    <div className="app app--fab" data-screen-label="Item Detail">
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-        <button
-          onClick={() => onNavigate('collection', item.collectionId)}
-          style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer' }}
-        >←</button>
-        <h1 style={{ fontSize: 20, fontWeight: 500, flex: 1 }}>{item.name}</h1>
-        {item.isFavorite && <span style={{ fontSize: 20 }}>⭐</span>}
+      <header className="topbar">
+        <button className="iconbtn iconbtn--bare" onClick={() => onNavigate('collection', item.collectionId)}><Icon.back /></button>
+        <h1 className="title title--sm grow">{item.name}</h1>
+        {item.isFavorite && <span className="fav fav--lg"><Icon.star /></span>}
+      </header>
+
+      {item.photo
+        ? <img className="hero-img" src={item.photo} alt={item.name} />
+        : <div className="hero-ph">no photo</div>}
+
+      <div className="pillrow">
+        <span className="pill" data-status={item.status}>{item.status}</span>
+        {item.condition && <span className="pill">{item.condition}</span>}
+        {item.platform && <span className="pill">{item.platform}</span>}
       </div>
 
-      {item.photo && (
-        <img src={item.photo} alt={item.name}
-          style={{ width: '100%', maxHeight: 220, objectFit: 'cover', borderRadius: 10, marginBottom: 16 }} />
-      )}
-
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-        <span style={{
-          padding: '4px 12px', borderRadius: 20, fontSize: 13, fontWeight: 500,
-          background: statusColor[item.status] + '20',
-          color: statusColor[item.status],
-          textTransform: 'capitalize'
-        }}>
-          {item.status}
-        </span>
-        {item.condition && (
-          <span style={{
-            padding: '4px 12px', borderRadius: 20, fontSize: 13,
-            background: '#FFF3CD', color: '#856404'
-          }}>
-            {item.condition}
-          </span>
-        )}
-        {item.platform && (
-          <span style={{
-            padding: '4px 12px', borderRadius: 20, fontSize: 13,
-            background: '#E6F1FB', color: '#185FA5'
-          }}>
-            {item.platform}
-          </span>
-        )}
-      </div>
-
-      <div style={{ background: 'white', border: '1px solid #eee', borderRadius: 10, padding: '0 14px', marginBottom: 16 }}>
+      <div className="card fieldcard">
         {field('Price Paid', item.pricePaid != null ? `${item.pricePaid}${collection.currency}` : null)}
         {field('Estimated Value', item.estimatedValue != null ? `${item.estimatedValue}${collection.currency}` : null)}
         {field('Price Sold', item.priceSold != null ? `${item.priceSold}${collection.currency}` : null)}
-        {item.pricePaid && item.priceSold && field(
+        {profit != null && field(
           'Profit / Loss',
-          `${item.priceSold - item.pricePaid > 0 ? '+' : ''}${(item.priceSold - item.pricePaid).toFixed(2)}${collection.currency}`
+          `${profit > 0 ? '+' : ''}${profit.toFixed(2)}${collection.currency}`,
+          profit >= 0 ? 'field--profit' : 'field--loss'
         )}
         {field('Location', item.location)}
         {field('Storage Unit', item.storageUnit)}
@@ -137,48 +109,21 @@ function ItemDetail({ itemId, onNavigate }) {
           const val = item.customFieldValues?.[cf.id]
           if (val === undefined || val === null || val === '') return null
           const display = cf.type === 'boolean' ? (val ? 'Yes' : 'No') : String(val)
-          return field(cf.label || 'Custom Field', display)
+          return <span key={cf.id}>{field(cf.label || 'Custom Field', display)}</span>
         })}
       </div>
 
-      <div style={{
-        background: 'white', border: '1px solid #eee', borderRadius: 10,
-        padding: 16, marginBottom: 16, textAlign: 'center'
-      }}>
-        <p style={{ fontSize: 13, color: '#999', marginBottom: 12 }}>QR Code</p>
-        <canvas ref={qrRef} style={{ borderRadius: 8 }} />
-        <div style={{ marginTop: 12 }}>
-          <button
-            onClick={handlePrint}
-            style={{
-              padding: '8px 20px', background: '#534AB7', color: 'white',
-              border: 'none', borderRadius: 8, fontSize: 14, cursor: 'pointer'
-            }}
-          >
-            🖨 Print QR Label
-          </button>
+      <div className="card qrcard">
+        <span className="qrcard__label">QR label · scan to find</span>
+        <div className="qr">
+          <canvas ref={qrRef} />
         </div>
+        <button className="btn btn--ghost btn--sm" onClick={handlePrint}><Icon.printer /><span>Print</span></button>
       </div>
 
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button
-          onClick={() => onNavigate('editItem', item.id)}
-          style={{
-            flex: 1, padding: 12, background: 'white', color: '#534AB7',
-            border: '1px solid #534AB7', borderRadius: 8, fontSize: 15, cursor: 'pointer'
-          }}
-        >
-          ✏️ Edit
-        </button>
-        <button
-          onClick={handleDelete}
-          style={{
-            flex: 1, padding: 12, background: 'white', color: '#e74c3c',
-            border: '1px solid #e74c3c', borderRadius: 8, fontSize: 15, cursor: 'pointer'
-          }}
-        >
-          🗑 Delete
-        </button>
+      <div className="action-row">
+        <button className="btn btn--outline" onClick={() => onNavigate('editItem', item.id)}><Icon.edit /><span>Edit</span></button>
+        <button className="btn btn--danger" onClick={handleDelete}><Icon.trash /><span>Delete</span></button>
       </div>
 
     </div>

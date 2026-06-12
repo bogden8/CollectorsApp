@@ -1,80 +1,80 @@
 import { useState, useEffect } from 'react'
 import { db } from '../db'
+import Icon from '../icons'
 
 function Home({ onNavigate }) {
   const [collections, setCollections] = useState([])
+  const [counts, setCounts] = useState({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function loadCollections() {
       const result = await db.collections.toArray()
       const filtered = result.filter(col => !col.isDeleted)
+      const allItems = await db.items.toArray()
+      const live = allItems.filter(i => !i.isDeleted)
+      const byCol = {}
+      for (const it of live) byCol[it.collectionId] = (byCol[it.collectionId] || 0) + 1
       setCollections(filtered)
+      setCounts(byCol)
       setLoading(false)
     }
     loadCollections()
   }, [])
 
-  if (loading) return <div style={{ padding: 16 }}>Loading...</div>
+  if (loading) return <div className="loading">Loading…</div>
+
+  const totalItems = Object.values(counts).reduce((a, b) => a + b, 0)
 
   return (
-    <div style={{ maxWidth: 480, margin: '0 auto', padding: 16 }}>
+    <div className="app" data-screen-label="Home">
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-  <h1 style={{ fontSize: 22, fontWeight: 500 }}>My Collections</h1>
-  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-    <button
-      onClick={() => onNavigate('exportImport')}
-      style={{ background: 'none', border: 'none', fontSize: 13, color: '#999', cursor: 'pointer' }}
-    >
-      💾 Backup
-    </button>
-    <button
-      onClick={() => onNavigate('trash')}
-      style={{ background: 'none', border: 'none', fontSize: 13, color: '#999', cursor: 'pointer' }}
-    >
-      🗑 Trash
-    </button>
-    <button
-      onClick={() => onNavigate('createCollection')}
-      style={{
-        background: '#534AB7', color: 'white', border: 'none',
-        borderRadius: 8, padding: '8px 14px', fontSize: 14, cursor: 'pointer'
-      }}
-    >
-      + New
-    </button>
-  </div>
-</div>
+      <header className="topbar">
+        <div className="topbar__titles">
+          <span className="kicker">your shelf</span>
+          <h1 className="title">Collections</h1>
+        </div>
+        <div className="topbar__actions">
+          <button className="iconbtn" title="Backup" onClick={() => onNavigate('exportImport')}><Icon.save /></button>
+          <button className="iconbtn" title="Trash" onClick={() => onNavigate('trash')}><Icon.trash /></button>
+          <button className="btn btn--primary btn--sm" onClick={() => onNavigate('createCollection')}>
+            <Icon.plus /><span>New</span>
+          </button>
+        </div>
+      </header>
 
-      {collections.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: '#999' }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>📦</div>
-          <p style={{ fontSize: 16, marginBottom: 8 }}>No collections yet</p>
-          <p style={{ fontSize: 14 }}>Tap + New to create your first one</p>
+      {collections.length > 0 && (
+        <div className="summary">
+          <div className="summary__cell">
+            <div className="summary__n">{collections.length}</div>
+            <div className="summary__l">Collections</div>
+          </div>
+          <div className="summary__cell">
+            <div className="summary__n">{totalItems}</div>
+            <div className="summary__l">Items tracked</div>
+          </div>
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {collections.map(col => (
-          <div
-            key={col.id}
-            onClick={() => onNavigate('collection', col.id)}
-            style={{
-              background: 'white', border: '1px solid #eee', borderRadius: 12,
-              padding: '16px', cursor: 'pointer', display: 'flex',
-              alignItems: 'center', gap: 14
-            }}
-          >
+      {collections.length === 0 && (
+        <div className="empty">
+          <div className="empty__emoji">📦</div>
+          <p className="empty__title">No collections yet</p>
+          <p className="empty__sub">Tap “New” to start your first one</p>
+        </div>
+      )}
 
-            <span style={{ fontSize: 36 }}>{col.icon}</span>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 16, fontWeight: 500 }}>{col.name}</div>
-              <div style={{ fontSize: 13, color: '#999', marginTop: 2 }}>
-                {col.enabledFields.length} fields enabled · {col.currency}
+      <div className="list">
+        {collections.map(col => (
+          <div key={col.id} className="collection-card" onClick={() => onNavigate('collection', col.id)}>
+            <span className="collection-card__icon">{col.icon}</span>
+            <div className="collection-card__body">
+              <div className="collection-card__name">{col.name}</div>
+              <div className="collection-card__meta">
+                {counts[col.id] || 0} {counts[col.id] === 1 ? 'item' : 'items'} · {col.currency}
               </div>
             </div>
-            <span style={{ color: '#ccc', fontSize: 20 }}>›</span>
+            <Icon.chev className="chev" />
           </div>
         ))}
       </div>

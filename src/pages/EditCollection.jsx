@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { db } from '../db'
+import Icon from '../icons'
 
 const EMOJI_OPTIONS = ['🎮', '👟', '📀', '🎵', '📚', '🃏', '🏆', '🎨', '🧸', '⌚', '📷', '🎸']
 
@@ -25,6 +26,13 @@ const AVAILABLE_FIELDS = [
   { key: 'quantity',         label: 'Quantity' },
   { key: 'notes',            label: 'Notes' },
   { key: 'barcode',          label: 'Barcode' },
+]
+
+const CF_TYPES = [
+  { value: 'text',    label: 'Text' },
+  { value: 'number',  label: 'Number' },
+  { value: 'boolean', label: 'Yes/No' },
+  { value: 'date',    label: 'Date' },
 ]
 
 function EditCollection({ collectionId, onNavigate }) {
@@ -69,151 +77,90 @@ function EditCollection({ collectionId, onNavigate }) {
     onNavigate('collection', collectionId)
   }
 
-  if (loading) return <div style={{ padding: 16 }}>Loading...</div>
-
-  const input = {
-    width: '100%', padding: 12, fontSize: 15,
-    borderRadius: 8, border: '1px solid #ddd',
-    marginBottom: 14, boxSizing: 'border-box'
-  }
+  if (loading) return <div className="loading">Loading…</div>
 
   return (
-    <div style={{ maxWidth: 480, margin: '0 auto', padding: 16, paddingBottom: 80 }}>
+    <div className="app" data-screen-label="Edit Collection">
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-        <button
-          onClick={() => onNavigate('collection', collectionId)}
-          style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer' }}
-        >←</button>
-        <h1 style={{ fontSize: 20, fontWeight: 500 }}>Edit Collection</h1>
-      </div>
+      <header className="topbar">
+        <button className="iconbtn iconbtn--bare" onClick={() => onNavigate('collection', collectionId)}><Icon.back /></button>
+        <h1 className="title title--sm">Edit collection</h1>
+      </header>
 
-      <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>Icon</label>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-        {EMOJI_OPTIONS.map(e => (
-          <button
-            key={e}
-            onClick={() => setIcon(e)}
-            style={{
-              fontSize: 28, padding: 8, border: icon === e ? '2px solid #7F77DD' : '1px solid #ddd',
-              borderRadius: 8, background: icon === e ? '#EEEDFE' : 'white', cursor: 'pointer'
-            }}
-          >
-            {e}
-          </button>
-        ))}
-      </div>
-
-      <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>Name *</label>
-      <input
-        style={input}
-        placeholder="e.g. My PS2 Games"
-        value={name}
-        onChange={e => setName(e.target.value)}
-      />
-
-      <label style={{ fontSize: 13, color: '#666', marginBottom: 4, display: 'block' }}>Currency Symbol</label>
-      <input
-        style={input}
-        placeholder="€ $ RON"
-        value={currency}
-        onChange={e => setCurrency(e.target.value)}
-      />
-
-      <label style={{ fontSize: 13, color: '#666', marginBottom: 8, display: 'block' }}>
-        Enabled Fields
-      </label>
-      <p style={{ fontSize: 12, color: '#999', marginBottom: 12 }}>
-        Turning off a field hides it but never deletes existing data.
-      </p>
-
-      <div style={{ background: '#f5f5f5', borderRadius: 8, padding: '10px 14px', marginBottom: 6 }}>
-        <span style={{ color: '#999', fontSize: 14 }}>✅ Name — always on</span>
-      </div>
-      <div style={{ background: '#f5f5f5', borderRadius: 8, padding: '10px 14px', marginBottom: 16 }}>
-        <span style={{ color: '#999', fontSize: 14 }}>✅ Status — always on</span>
-      </div>
-
-      {AVAILABLE_FIELDS.map(field => (
-        <div
-          key={field.key}
-          onClick={() => toggleField(field.key)}
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '12px 14px', marginBottom: 6, borderRadius: 8, cursor: 'pointer',
-            border: '1px solid',
-            borderColor: enabledFields.includes(field.key) ? '#7F77DD' : '#ddd',
-            background: enabledFields.includes(field.key) ? '#EEEDFE' : 'white',
-          }}
-        >
-          <span style={{ fontSize: 15 }}>{field.label}</span>
-          <span style={{ fontSize: 20 }}>
-            {enabledFields.includes(field.key) ? '☑' : '☐'}
-          </span>
+      <div className="field-block">
+        <label className="label">Icon</label>
+        <div className="emoji-grid">
+          {EMOJI_OPTIONS.map(e => (
+            <button key={e} className={'emoji-btn' + (icon === e ? ' emoji-btn--on' : '')} onClick={() => setIcon(e)}>{e}</button>
+          ))}
         </div>
-      ))}
+      </div>
 
-      <div style={{ marginTop: 24, marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <span style={{ fontSize: 15, fontWeight: 500 }}>Custom Fields</span>
-          <button
-            onClick={() => setCustomFields(prev => [...prev, { id: 'cf' + Date.now(), label: '', type: 'text' }])}
-            style={{
-              padding: '6px 12px', background: '#534AB7', color: 'white',
-              border: 'none', borderRadius: 8, fontSize: 13, cursor: 'pointer'
-            }}
-          >+ Add Field</button>
-        </div>
+      <div className="field-block">
+        <label className="label">Name</label>
+        <input className="input" placeholder="e.g. My PS2 Games" value={name} onChange={e => setName(e.target.value)} />
+      </div>
 
-        {customFields.length === 0 && (
-          <p style={{ fontSize: 13, color: '#bbb', textAlign: 'center', padding: '12px 0' }}>
-            No custom fields yet
-          </p>
-        )}
+      <div className="field-block">
+  <label className="label">Currency symbol</label>
+  <input
+    className="input"
+    placeholder="€  $  RON"
+    maxLength={4}
+    value={currency}
+    onChange={e => setCurrency(e.target.value)}
+  />
+</div>
 
+      <div className="field-block">
+        <label className="label">Enabled fields</label>
+        <p className="note note--tight">Turning off a field hides it but never deletes existing data.</p>
+      </div>
+
+      <div className="locked"><Icon.check className="ic--sm" /><span>Name — always on</span></div>
+      <div className="locked"><Icon.check className="ic--sm" /><span>Status — always on</span></div>
+
+      <div className="list">
+        {AVAILABLE_FIELDS.map(field => {
+          const on = enabledFields.includes(field.key)
+          return (
+            <div key={field.key} className={'toggle' + (on ? ' toggle--on' : '')} onClick={() => toggleField(field.key)}>
+              <span className="toggle__label">{field.label}</span>
+              <span className="toggle__box"><Icon.check className="ic--sm" /></span>
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="topbar">
+        <span className="help-h grow">Custom fields</span>
+        <button className="btn btn--ghost btn--sm" onClick={() => setCustomFields(prev => [...prev, { id: 'cf' + Date.now(), label: '', type: 'text' }])}>
+          <Icon.plus /><span>Add field</span>
+        </button>
+      </div>
+
+      {customFields.length === 0 && (
+        <p className="note center">No custom fields yet</p>
+      )}
+
+      <div className="list">
         {customFields.map(cf => (
-          <div key={cf.id} style={{
-            border: '1px solid #ddd', borderRadius: 8, padding: 12, marginBottom: 10, background: 'white'
-          }}>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+          <div key={cf.id} className="cf-card">
+            <div className="cf-row">
               <input
-                style={{
-                  flex: 1, padding: '8px 10px', fontSize: 14,
-                  borderRadius: 6, border: '1px solid #ddd', boxSizing: 'border-box'
-                }}
+                className="input grow"
                 placeholder="Field label e.g. Region"
                 value={cf.label}
-                onChange={e => setCustomFields(prev =>
-                  prev.map(f => f.id === cf.id ? { ...f, label: e.target.value } : f)
-                )}
+                onChange={e => setCustomFields(prev => prev.map(f => f.id === cf.id ? { ...f, label: e.target.value } : f))}
               />
-              <button
-                onClick={() => setCustomFields(prev => prev.filter(f => f.id !== cf.id))}
-                style={{
-                  padding: '0 10px', background: 'none', border: '1px solid #ddd',
-                  borderRadius: 6, cursor: 'pointer', fontSize: 16, color: '#999'
-                }}
-              >✕</button>
+              <button className="iconbtn" onClick={() => setCustomFields(prev => prev.filter(f => f.id !== cf.id))}><Icon.x className="ic--sm" /></button>
             </div>
-            <div style={{ display: 'flex', gap: 6 }}>
-              {[
-                { value: 'text',    label: 'Text' },
-                { value: 'number',  label: 'Number' },
-                { value: 'boolean', label: 'Yes/No' },
-                { value: 'date',    label: 'Date' },
-              ].map(t => (
+            <div className="cf-types">
+              {CF_TYPES.map(t => (
                 <button
                   key={t.value}
-                  onClick={() => setCustomFields(prev =>
-                    prev.map(f => f.id === cf.id ? { ...f, type: t.value } : f)
-                  )}
-                  style={{
-                    padding: '5px 10px', fontSize: 12, borderRadius: 6, border: '1px solid',
-                    borderColor: cf.type === t.value ? '#7F77DD' : '#ddd',
-                    background: cf.type === t.value ? '#EEEDFE' : 'white',
-                    color: cf.type === t.value ? '#534AB7' : '#666',
-                    cursor: 'pointer'
-                  }}
+                  className={'seg-btn' + (cf.type === t.value ? ' seg-btn--on' : '')}
+                  onClick={() => setCustomFields(prev => prev.map(f => f.id === cf.id ? { ...f, type: t.value } : f))}
                 >{t.label}</button>
               ))}
             </div>
@@ -221,16 +168,8 @@ function EditCollection({ collectionId, onNavigate }) {
         ))}
       </div>
 
-      <button
-        onClick={handleSave}
-        disabled={saving || !name.trim()}
-        style={{
-          width: '100%', padding: 14, background: '#534AB7', color: 'white',
-          border: 'none', borderRadius: 8, fontSize: 16, cursor: 'pointer',
-          marginTop: 16, opacity: name.trim() ? 1 : 0.5
-        }}
-      >
-        {saving ? 'Saving...' : 'Save Changes'}
+      <button className="btn btn--primary btn--block" disabled={saving || !name.trim()} onClick={handleSave}>
+        {saving ? 'Saving…' : 'Save changes'}
       </button>
 
     </div>

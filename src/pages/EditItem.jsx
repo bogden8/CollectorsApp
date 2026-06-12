@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { db } from '../db'
+import Icon from '../icons'
 
 const CONDITION_OPTIONS = ['Sealed', 'Complete', 'Loose', 'Damaged']
 const STATUS_OPTIONS = ['owned', 'wishlist', 'sold', 'borrowed']
@@ -112,285 +113,121 @@ function EditItem({ itemId, onNavigate }) {
     onNavigate('item', itemId)
   }
 
-  if (loading) return <div style={{ padding: 16 }}>Loading...</div>
+  if (loading) return <div className="loading">Loading…</div>
 
-  const input = {
-    width: '100%', padding: 12, fontSize: 15,
-    borderRadius: 8, border: '1px solid #ddd',
-    marginBottom: 14, boxSizing: 'border-box'
-  }
-
-  const label = {
-    fontSize: 13, color: '#666', marginBottom: 4, display: 'block'
-  }
+  const text = (field, lbl, value, setter, ph, type = 'text') => has(field) && (
+    <div className="field-block">
+      <label className="label">{lbl}</label>
+      <input className="input" type={type} placeholder={ph} value={value} onChange={e => setter(e.target.value)} />
+    </div>
+  )
 
   return (
-    <div style={{ maxWidth: 480, margin: '0 auto', padding: 16, paddingBottom: 80 }}>
+    <div className="app app--fab" data-screen-label="Edit Item">
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-        <button
-          onClick={() => onNavigate('item', itemId)}
-          style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer' }}
-        >←</button>
-        <h1 style={{ fontSize: 20, fontWeight: 500 }}>Edit Item</h1>
+      <header className="topbar">
+        <button className="iconbtn iconbtn--bare" onClick={() => onNavigate('item', itemId)}><Icon.back /></button>
+        <h1 className="title title--sm">Edit item</h1>
+      </header>
+
+      <div className="field-block">
+        <label className="label">Name *</label>
+        <input className="input" placeholder="e.g. Halo Reach" value={name} onChange={e => setName(e.target.value)} />
       </div>
 
-      <label style={label}>Name *</label>
-      <input
-        style={input}
-        placeholder="e.g. Halo Reach"
-        value={name}
-        onChange={e => setName(e.target.value)}
-      />
-
-      <label style={label}>Status *</label>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
-        {STATUS_OPTIONS.map(s => (
-          <button
-            key={s}
-            onClick={() => setStatus(s)}
-            style={{
-              padding: '8px 14px', borderRadius: 20, border: '1px solid',
-              borderColor: status === s ? '#7F77DD' : '#ddd',
-              background: status === s ? '#EEEDFE' : 'white',
-              color: status === s ? '#534AB7' : '#666',
-              cursor: 'pointer', fontSize: 13, textTransform: 'capitalize'
-            }}
-          >
-            {s}
-          </button>
-        ))}
+      <div className="field-block">
+        <label className="label">Status *</label>
+        <div className="seg">
+          {STATUS_OPTIONS.map(s => (
+            <button key={s} className={'seg-btn' + (status === s ? ' seg-btn--on' : '')} onClick={() => setStatus(s)}>{s}</button>
+          ))}
+        </div>
       </div>
 
       {has('photo') && (
-        <>
-          <label style={label}>Photo</label>
+        <div className="field-block">
+          <label className="label">Photo</label>
           {photo && (
-            <div style={{ marginBottom: 8 }}>
-              <img src={photo} alt="current"
-                style={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 8 }} />
-              <button
-                onClick={() => setPhoto(null)}
-                style={{ marginTop: 6, fontSize: 13, color: '#e74c3c', background: 'none', border: 'none', cursor: 'pointer' }}
-              >
-                Remove photo
+            <>
+              <img className="preview-img" src={photo} alt="current" />
+              <button className="btn btn--danger btn--sm" onClick={() => setPhoto(null)}>
+                <Icon.x className="ic--sm" /><span>Remove photo</span>
               </button>
-            </div>
+            </>
           )}
-          <input
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={handlePhoto}
-            style={{ marginBottom: 14, fontSize: 14 }}
-          />
-        </>
+          <label className="file-input">
+            {photo ? 'Replace photo' : 'Take or choose a photo'}
+            <input type="file" accept="image/*"  onChange={handlePhoto} hidden />
+          </label>
+        </div>
       )}
 
       {has('condition') && (
-        <>
-          <label style={label}>Condition</label>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+        <div className="field-block">
+          <label className="label">Condition</label>
+          <div className="seg">
             {CONDITION_OPTIONS.map(c => (
-              <button
-                key={c}
-                onClick={() => setCondition(condition === c ? '' : c)}
-                style={{
-                  padding: '8px 14px', borderRadius: 20, border: '1px solid',
-                  borderColor: condition === c ? '#7F77DD' : '#ddd',
-                  background: condition === c ? '#EEEDFE' : 'white',
-                  color: condition === c ? '#534AB7' : '#666',
-                  cursor: 'pointer', fontSize: 13
-                }}
-              >
-                {c}
-              </button>
+              <button key={c} className={'seg-btn' + (condition === c ? ' seg-btn--on' : '')} onClick={() => setCondition(condition === c ? '' : c)}>{c}</button>
             ))}
           </div>
-        </>
+        </div>
       )}
 
-      {has('platform') && (
-        <>
-          <label style={label}>Platform / Variant</label>
-          <input style={input} placeholder="e.g. PS2, Xbox 360"
-            value={platform} onChange={e => setPlatform(e.target.value)} />
-        </>
-      )}
-
-      {has('pricePaid') && (
-        <>
-          <label style={label}>Price Paid ({collection.currency})</label>
-          <input style={input} type="number" placeholder="0"
-            value={pricePaid} onChange={e => setPricePaid(e.target.value)} />
-        </>
-      )}
-
-      {has('estimatedValue') && (
-        <>
-          <label style={label}>Estimated Value ({collection.currency})</label>
-          <input style={input} type="number" placeholder="0"
-            value={estimatedValue} onChange={e => setEstimatedValue(e.target.value)} />
-        </>
-      )}
-
-      {has('priceSold') && status === 'sold' && (
-        <>
-          <label style={label}>Price Sold ({collection.currency})</label>
-          <input style={input} type="number" placeholder="0"
-            value={priceSold} onChange={e => setPriceSold(e.target.value)} />
-        </>
-      )}
-
-      {has('location') && (
-        <>
-          <label style={label}>Location</label>
-          <input style={input} placeholder="e.g. Shelf A2, Box B1"
-            value={location} onChange={e => setLocation(e.target.value)} />
-        </>
-      )}
-
-      {has('storageUnit') && (
-        <>
-          <label style={label}>Storage Unit</label>
-          <input style={input} placeholder="e.g. Bedroom shelf, Garage"
-            value={storageUnit} onChange={e => setStorageUnit(e.target.value)} />
-        </>
-      )}
-
-      {has('purchaseDate') && (
-        <>
-          <label style={label}>Purchase Date</label>
-          <input style={input} type="date"
-            value={purchaseDate} onChange={e => setPurchaseDate(e.target.value)} />
-        </>
-      )}
-
-      {has('purchasedFrom') && (
-        <>
-          <label style={label}>Purchased From</label>
-          <input style={input} placeholder="e.g. OLX, eBay"
-            value={purchasedFrom} onChange={e => setPurchasedFrom(e.target.value)} />
-        </>
-      )}
-
-      {has('soldDate') && status === 'sold' && (
-        <>
-          <label style={label}>Sold Date</label>
-          <input style={input} type="date"
-            value={soldDate} onChange={e => setSoldDate(e.target.value)} />
-        </>
-      )}
-
-      {has('soldOn') && status === 'sold' && (
-        <>
-          <label style={label}>Sold On</label>
-          <input style={input} placeholder="e.g. OLX, Facebook Marketplace"
-            value={soldOn} onChange={e => setSoldOn(e.target.value)} />
-        </>
-      )}
-
-      {has('borrowedTo') && status === 'borrowed' && (
-        <>
-          <label style={label}>Borrowed To</label>
-          <input style={input} placeholder="e.g. Andrei"
-            value={borrowedTo} onChange={e => setBorrowedTo(e.target.value)} />
-        </>
-      )}
-
-      {has('borrowedDate') && status === 'borrowed' && (
-        <>
-          <label style={label}>Borrowed Date</label>
-          <input style={input} type="date"
-            value={borrowedDate} onChange={e => setBorrowedDate(e.target.value)} />
-        </>
-      )}
-
-      {has('borrowReturnDate') && status === 'borrowed' && (
-        <>
-          <label style={label}>Expected Return Date</label>
-          <input style={input} type="date"
-            value={borrowReturnDate} onChange={e => setBorrowReturnDate(e.target.value)} />
-        </>
-      )}
-
-      {has('borrowNotes') && status === 'borrowed' && (
-        <>
-          <label style={label}>Borrow Notes</label>
-          <input style={input} placeholder="e.g. Lent at school"
-            value={borrowNotes} onChange={e => setBorrowNotes(e.target.value)} />
-        </>
-      )}
-
-      {has('tags') && (
-        <>
-          <label style={label}>Tags (comma separated)</label>
-          <input style={input} placeholder="e.g. rare, complete, signed"
-            value={tags} onChange={e => setTags(e.target.value)} />
-        </>
-      )}
-
-      {has('quantity') && (
-        <>
-          <label style={label}>Quantity</label>
-          <input style={input} type="number" placeholder="1"
-            value={quantity} onChange={e => setQuantity(e.target.value)} />
-        </>
-      )}
+      {text('platform', 'Platform / Variant', platform, setPlatform, 'e.g. PS2, Xbox 360')}
+      {text('pricePaid', `Price Paid (${collection.currency})`, pricePaid, setPricePaid, '0', 'number')}
+      {text('estimatedValue', `Estimated Value (${collection.currency})`, estimatedValue, setEstimatedValue, '0', 'number')}
+      {status === 'sold' && text('priceSold', `Price Sold (${collection.currency})`, priceSold, setPriceSold, '0', 'number')}
+      {text('location', 'Location', location, setLocation, 'e.g. Shelf A2, Box B1')}
+      {text('storageUnit', 'Storage Unit', storageUnit, setStorageUnit, 'e.g. Bedroom shelf, Garage')}
+      {text('purchaseDate', 'Purchase Date', purchaseDate, setPurchaseDate, '', 'date')}
+      {text('purchasedFrom', 'Purchased From', purchasedFrom, setPurchasedFrom, 'e.g. OLX, eBay')}
+      {status === 'sold' && text('soldDate', 'Sold Date', soldDate, setSoldDate, '', 'date')}
+      {status === 'sold' && text('soldOn', 'Sold On', soldOn, setSoldOn, 'e.g. OLX, Facebook Marketplace')}
+      {status === 'borrowed' && text('borrowedTo', 'Borrowed To', borrowedTo, setBorrowedTo, 'e.g. Andrei')}
+      {status === 'borrowed' && text('borrowedDate', 'Borrowed Date', borrowedDate, setBorrowedDate, '', 'date')}
+      {status === 'borrowed' && text('borrowReturnDate', 'Expected Return Date', borrowReturnDate, setBorrowReturnDate, '', 'date')}
+      {status === 'borrowed' && text('borrowNotes', 'Borrow Notes', borrowNotes, setBorrowNotes, 'e.g. Lent at school')}
+      {text('tags', 'Tags (comma separated)', tags, setTags, 'e.g. rare, complete, signed')}
+      {text('quantity', 'Quantity', quantity, setQuantity, '1', 'number')}
 
       {has('isFavorite') && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-          <input type="checkbox" id="fav" checked={isFavorite}
-            onChange={e => setIsFavorite(e.target.checked)}
-            style={{ width: 18, height: 18 }} />
-          <label htmlFor="fav" style={{ fontSize: 15, cursor: 'pointer' }}>Mark as Favorite ⭐</label>
+        <div className="checkrow">
+          <input type="checkbox" id="fav" checked={isFavorite} onChange={e => setIsFavorite(e.target.checked)} />
+          <label htmlFor="fav">Mark as favorite ⭐</label>
         </div>
       )}
 
       {has('notes') && (
-        <>
-          <label style={label}>Notes</label>
-          <textarea style={{ ...input, height: 80, resize: 'vertical' }}
-            placeholder="Any extra info..."
-            value={notes} onChange={e => setNotes(e.target.value)} />
-        </>
+        <div className="field-block">
+          <label className="label">Notes</label>
+          <textarea className="textarea" placeholder="Any extra info…" value={notes} onChange={e => setNotes(e.target.value)} />
+        </div>
       )}
 
       {(collection.customFields || []).map(cf => (
-        <div key={cf.id}>
-          <label style={label}>{cf.label || 'Custom Field'}</label>
+        <div className="field-block" key={cf.id}>
           {cf.type === 'boolean' ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-              <input
-                type="checkbox"
-                id={`cf_${cf.id}`}
-                checked={!!customFieldValues[cf.id]}
-                onChange={e => setCustomFieldValues(prev => ({ ...prev, [cf.id]: e.target.checked }))}
-                style={{ width: 18, height: 18 }}
-              />
-              <label htmlFor={`cf_${cf.id}`} style={{ fontSize: 15, cursor: 'pointer' }}>{cf.label}</label>
+            <div className="checkrow">
+              <input type="checkbox" id={`cf_${cf.id}`} checked={!!customFieldValues[cf.id]}
+                onChange={e => setCustomFieldValues(prev => ({ ...prev, [cf.id]: e.target.checked }))} />
+              <label htmlFor={`cf_${cf.id}`}>{cf.label}</label>
             </div>
           ) : (
-            <input
-              style={input}
-              type={cf.type === 'number' ? 'number' : cf.type === 'date' ? 'date' : 'text'}
-              value={customFieldValues[cf.id] ?? ''}
-              onChange={e => setCustomFieldValues(prev => ({ ...prev, [cf.id]: e.target.value }))}
-            />
+            <>
+              <label className="label">{cf.label || 'Custom Field'}</label>
+              <input
+                className="input"
+                type={cf.type === 'number' ? 'number' : cf.type === 'date' ? 'date' : 'text'}
+                value={customFieldValues[cf.id] ?? ''}
+                onChange={e => setCustomFieldValues(prev => ({ ...prev, [cf.id]: e.target.value }))}
+              />
+            </>
           )}
         </div>
       ))}
 
-      <button
-        onClick={handleSave}
-        disabled={saving || !name.trim()}
-        style={{
-          width: '100%', padding: 14, background: '#534AB7', color: 'white',
-          border: 'none', borderRadius: 8, fontSize: 16, cursor: 'pointer',
-          opacity: name.trim() ? 1 : 0.5
-        }}
-      >
-        {saving ? 'Saving...' : 'Save Changes'}
+      <button className="btn btn--primary btn--block" disabled={saving || !name.trim()} onClick={handleSave}>
+        {saving ? 'Saving…' : 'Save changes'}
       </button>
 
     </div>

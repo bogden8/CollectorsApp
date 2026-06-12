@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { db } from '../db'
+import Icon from '../icons'
 
 function Trash({ onNavigate }) {
   const [deletedCollections, setDeletedCollections] = useState([])
@@ -63,61 +64,42 @@ function Trash({ onNavigate }) {
     setDeletedItems([])
   }
 
-  if (loading) return <div style={{ padding: 16 }}>Loading...</div>
+  if (loading) return <div className="loading">Loading…</div>
 
   const isEmpty = deletedCollections.length === 0 && deletedItems.length === 0
 
   return (
-    <div style={{ maxWidth: 480, margin: '0 auto', padding: 16, paddingBottom: 80 }}>
+    <div className="app" data-screen-label="Trash">
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-        <button
-          onClick={() => onNavigate('home')}
-          style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer' }}
-        >←</button>
-        <h1 style={{ fontSize: 20, fontWeight: 500, flex: 1 }}>🗑 Trash</h1>
-        {!isEmpty && (
-          <button
-            onClick={emptyTrash}
-            style={{ background: 'none', border: '1px solid #ffcccc', borderRadius: 8, padding: '6px 12px', fontSize: 13, cursor: 'pointer', color: '#e74c3c' }}
-          >
-            Empty Trash
-          </button>
-        )}
-      </div>
+      <header className="topbar">
+        <button className="iconbtn iconbtn--bare" onClick={() => onNavigate('home')}><Icon.back /></button>
+        <h1 className="title title--sm grow">Trash</h1>
+        {!isEmpty && <button className="btn btn--danger btn--sm" onClick={emptyTrash}><Icon.trash /><span>Empty</span></button>}
+      </header>
 
       {isEmpty && (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: '#999' }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>✨</div>
-          <p style={{ fontSize: 16 }}>Trash is empty</p>
+        <div className="empty">
+          <div className="empty__emoji">✨</div>
+          <p className="empty__title">Trash is empty</p>
+          <p className="empty__sub">Deleted collections and items show up here</p>
         </div>
       )}
 
       {deletedCollections.length > 0 && (
         <>
-          <p style={{ fontSize: 12, color: '#999', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Deleted Collections
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
+          <p className="section-label">Deleted Collections</p>
+          <div className="list">
             {deletedCollections.map(col => (
-              <div key={col.id} style={{ background: 'white', border: '1px solid #eee', borderRadius: 10, padding: 14, display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ fontSize: 28 }}>{col.icon}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 500 }}>{col.name}</div>
-                  <div style={{ fontSize: 12, color: '#999' }}>Collection</div>
+              <div key={col.id} className="card trash-row">
+                <span className="crumb-emoji">{col.icon}</span>
+                <div className="trash-row__body">
+                  <div className="trash-row__name">{col.name}</div>
+                  <div className="trash-row__meta">Collection</div>
                 </div>
-                <button
-                  onClick={() => restoreCollection(col)}
-                  style={{ padding: '6px 10px', background: '#E1F5EE', color: '#0F6E56', border: 'none', borderRadius: 6, fontSize: 12, cursor: 'pointer', marginRight: 4 }}
-                >
-                  Restore
-                </button>
-                <button
-                  onClick={() => permanentlyDeleteCollection(col)}
-                  style={{ padding: '6px 10px', background: '#fff0f0', color: '#e74c3c', border: 'none', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}
-                >
-                  Delete
-                </button>
+                <div className="trash-actions">
+                  <button className="btn btn--restore btn--sm" onClick={() => restoreCollection(col)}><Icon.undo className="ic--sm" /><span>Restore</span></button>
+                  <button className="iconbtn iconbtn--danger" onClick={() => permanentlyDeleteCollection(col)}><Icon.trash className="ic--sm" /></button>
+                </div>
               </div>
             ))}
           </div>
@@ -126,32 +108,21 @@ function Trash({ onNavigate }) {
 
       {deletedItems.length > 0 && (
         <>
-          <p style={{ fontSize: 12, color: '#999', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Deleted Items
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <p className="section-label">Deleted Items</p>
+          <div className="list">
             {deletedItems.map(item => (
-              <div key={item.id} style={{ background: 'white', border: '1px solid #eee', borderRadius: 10, padding: 14, display: 'flex', alignItems: 'center', gap: 12 }}>
-                {item.photo && (
-                  <img src={item.photo} alt={item.name}
-                    style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 6 }} />
-                )}
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 500 }}>{item.name}</div>
-                  <div style={{ fontSize: 12, color: '#999', textTransform: 'capitalize' }}>{item.status}</div>
+              <div key={item.id} className="card trash-row">
+                {item.photo
+                  ? <img className="item__thumb" src={item.photo} alt={item.name} />
+                  : <div className="item__thumb item__thumb--ph"><Icon.box className="ic--sm" /></div>}
+                <div className="trash-row__body">
+                  <div className="trash-row__name">{item.name}</div>
+                  <div className="trash-row__meta cap">{item.status}</div>
                 </div>
-                <button
-                  onClick={() => restoreItem(item)}
-                  style={{ padding: '6px 10px', background: '#E1F5EE', color: '#0F6E56', border: 'none', borderRadius: 6, fontSize: 12, cursor: 'pointer', marginRight: 4 }}
-                >
-                  Restore
-                </button>
-                <button
-                  onClick={() => permanentlyDeleteItem(item)}
-                  style={{ padding: '6px 10px', background: '#fff0f0', color: '#e74c3c', border: 'none', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}
-                >
-                  Delete
-                </button>
+                <div className="trash-actions">
+                  <button className="btn btn--restore btn--sm" onClick={() => restoreItem(item)}><Icon.undo className="ic--sm" /><span>Restore</span></button>
+                  <button className="iconbtn iconbtn--danger" onClick={() => permanentlyDeleteItem(item)}><Icon.trash className="ic--sm" /></button>
+                </div>
               </div>
             ))}
           </div>
