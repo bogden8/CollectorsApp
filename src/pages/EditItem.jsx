@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { db } from '../db'
 import Icon from '../icons'
+import PhotoPicker from '../components/PhotoPicker'
+import PlatformInput from '../components/PlatformInput'
 
 const CONDITION_OPTIONS = ['Sealed', 'Complete', 'Loose', 'Damaged']
 const STATUS_OPTIONS = ['owned', 'wishlist', 'sold', 'borrowed']
@@ -31,7 +33,7 @@ function EditItem({ itemId, onNavigate }) {
   const [tags, setTags] = useState('')
   const [quantity, setQuantity] = useState('')
   const [notes, setNotes] = useState('')
-  const [photo, setPhoto] = useState(null)
+  const [photos, setPhotos] = useState([])
   const [customFieldValues, setCustomFieldValues] = useState({})
   const [saving, setSaving] = useState(false)
 
@@ -62,7 +64,7 @@ function EditItem({ itemId, onNavigate }) {
       setTags(item.tags ? item.tags.join(', ') : '')
       setQuantity(item.quantity ?? '')
       setNotes(item.notes || '')
-      setPhoto(item.photo || null)
+      setPhotos(item.photos && item.photos.length > 0 ? item.photos : (item.photo ? [item.photo] : []))
       setCustomFieldValues(item.customFieldValues || {})
       setLoading(false)
     }
@@ -71,14 +73,6 @@ function EditItem({ itemId, onNavigate }) {
 
   function has(field) {
     return collection?.enabledFields?.includes(field)
-  }
-
-  async function handlePhoto(e) {
-    const file = e.target.files[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = ev => setPhoto(ev.target.result)
-    reader.readAsDataURL(file)
   }
 
   async function handleSave() {
@@ -106,7 +100,8 @@ function EditItem({ itemId, onNavigate }) {
       tags:             tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : [],
       quantity:         quantity !== '' ? parseInt(quantity) : null,
       notes:            notes || null,
-      photo:            photo || null,
+      photo:            photos[0] || null,
+      photos,
       customFieldValues,
       updatedAt:        Date.now()
     })
@@ -145,21 +140,7 @@ function EditItem({ itemId, onNavigate }) {
       </div>
 
       {has('photo') && (
-        <div className="field-block">
-          <label className="label">Photo</label>
-          {photo && (
-            <>
-              <img className="preview-img" src={photo} alt="current" />
-              <button className="btn btn--danger btn--sm" onClick={() => setPhoto(null)}>
-                <Icon.x className="ic--sm" /><span>Remove photo</span>
-              </button>
-            </>
-          )}
-          <label className="file-input">
-            {photo ? 'Replace photo' : 'Take or choose a photo'}
-            <input type="file" accept="image/*"  onChange={handlePhoto} hidden />
-          </label>
-        </div>
+        <PhotoPicker photos={photos} onChange={setPhotos} />
       )}
 
       {has('condition') && (
@@ -173,14 +154,29 @@ function EditItem({ itemId, onNavigate }) {
         </div>
       )}
 
-      {text('platform', 'Platform / Variant', platform, setPlatform, 'e.g. PS2, Xbox 360')}
+      {has('platform') && (
+        <div className="field-block">
+          <label className="label">Platform / Variant</label>
+          <PlatformInput value={platform} onChange={setPlatform} placeholder="e.g. PS2, Xbox 360" />
+        </div>
+      )}
       {text('pricePaid', `Price Paid (${collection.currency})`, pricePaid, setPricePaid, '0', 'number')}
       {text('estimatedValue', `Estimated Value (${collection.currency})`, estimatedValue, setEstimatedValue, '0', 'number')}
       {status === 'sold' && text('priceSold', `Price Sold (${collection.currency})`, priceSold, setPriceSold, '0', 'number')}
-      {text('location', 'Location', location, setLocation, 'e.g. Shelf A2, Box B1')}
+      {has('location') && (
+        <div className="field-block">
+          <label className="label">Location</label>
+          <PlatformInput field="location" value={location} onChange={setLocation} placeholder="e.g. Shelf A2, Box B1" />
+        </div>
+      )}
       {text('storageUnit', 'Storage Unit', storageUnit, setStorageUnit, 'e.g. Bedroom shelf, Garage')}
       {text('purchaseDate', 'Purchase Date', purchaseDate, setPurchaseDate, '', 'date')}
-      {text('purchasedFrom', 'Purchased From', purchasedFrom, setPurchasedFrom, 'e.g. OLX, eBay')}
+      {has('purchasedFrom') && (
+        <div className="field-block">
+          <label className="label">Purchased From</label>
+          <PlatformInput field="purchasedFrom" value={purchasedFrom} onChange={setPurchasedFrom} placeholder="e.g. OLX, eBay" />
+        </div>
+      )}
       {status === 'sold' && text('soldDate', 'Sold Date', soldDate, setSoldDate, '', 'date')}
       {status === 'sold' && text('soldOn', 'Sold On', soldOn, setSoldOn, 'e.g. OLX, Facebook Marketplace')}
       {status === 'borrowed' && text('borrowedTo', 'Borrowed To', borrowedTo, setBorrowedTo, 'e.g. Andrei')}

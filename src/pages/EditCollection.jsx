@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { db } from '../db'
 import Icon from '../icons'
+import CurrencyPicker from '../components/CurrencyPicker'
 
 const EMOJI_OPTIONS = ['🎮', '👟', '📀', '🎵', '📚', '🃏', '🏆', '🎨', '🧸', '⌚', '📷', '🎸']
 
@@ -77,6 +78,16 @@ function EditCollection({ collectionId, onNavigate }) {
     onNavigate('collection', collectionId)
   }
 
+  async function handleDelete() {
+    if (!confirm(`Delete "${name}" and all its items? This cannot be undone.`)) return
+    await db.collections.update(collectionId, { isDeleted: true, deletedAt: Date.now() })
+    const allItems = await db.items.where('collectionId').equals(collectionId).toArray()
+    for (const item of allItems) {
+      await db.items.update(item.id, { isDeleted: true, deletedAt: Date.now() })
+    }
+    onNavigate('home')
+  }
+
   if (loading) return <div className="loading">Loading…</div>
 
   return (
@@ -102,15 +113,9 @@ function EditCollection({ collectionId, onNavigate }) {
       </div>
 
       <div className="field-block">
-  <label className="label">Currency symbol</label>
-  <input
-    className="input"
-    placeholder="€  $  RON"
-    maxLength={4}
-    value={currency}
-    onChange={e => setCurrency(e.target.value)}
-  />
-</div>
+        <label className="label">Currency</label>
+        <CurrencyPicker value={currency} onChange={setCurrency} />
+      </div>
 
       <div className="field-block">
         <label className="label">Enabled fields</label>
@@ -171,6 +176,11 @@ function EditCollection({ collectionId, onNavigate }) {
       <button className="btn btn--primary btn--block" disabled={saving || !name.trim()} onClick={handleSave}>
         {saving ? 'Saving…' : 'Save changes'}
       </button>
+
+      <div className="card card--pad">
+        <p className="alert alert--warn">Deleting this collection also removes all its items and cannot be undone.</p>
+        <button className="btn btn--danger btn--block" onClick={handleDelete}>Delete collection</button>
+      </div>
 
     </div>
   )

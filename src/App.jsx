@@ -8,6 +8,8 @@ import EditItem from './pages/EditItem'
 import EditCollection from './pages/EditCollection'
 import Trash from './pages/Trash'
 import ExportImport from './pages/ExportImport'
+import Stats from './pages/Stats'
+import Tags from './pages/Tags'
 import QrScannerModal from './components/QrScannerModal'
 import Icon from './icons'
 
@@ -99,6 +101,8 @@ function App() {
     if (page === 'editCollection')   return <EditCollection collectionId={pageParam} onNavigate={handleNavigate} />
     if (page === 'trash')            return <Trash onNavigate={handleNavigate} />
     if (page === 'exportImport')     return <ExportImport onNavigate={handleNavigate} />
+    if (page === 'stats')            return <Stats onNavigate={handleNavigate} />
+    if (page === 'tags')             return <Tags onNavigate={handleNavigate} />
     return <div className="loading">Page not found</div>
   }
 

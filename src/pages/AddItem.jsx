@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { db } from '../db'
 import Icon from '../icons'
+import PhotoPicker from '../components/PhotoPicker'
+import PlatformInput from '../components/PlatformInput'
 
 const CONDITION_OPTIONS = ['Sealed', 'Complete', 'Loose', 'Damaged']
 const STATUS_OPTIONS = ['owned', 'wishlist', 'sold', 'borrowed']
@@ -26,39 +28,32 @@ function AddItem({ collectionId, onNavigate }) {
   const [borrowedDate, setBorrowedDate] = useState('')
   const [borrowReturnDate, setBorrowReturnDate] = useState('')
   const [borrowNotes, setBorrowNotes] = useState('')
+  const [quantityToAdd, setQuantityToAdd] = useState(1)
   const [isFavorite, setIsFavorite] = useState(false)
   const [tags, setTags] = useState('')
   const [quantity, setQuantity] = useState('')
   const [notes, setNotes] = useState('')
-  const [photo, setPhoto] = useState(null)
+  const [photos, setPhotos] = useState([])
   const [customFieldValues, setCustomFieldValues] = useState({})
   const [saving, setSaving] = useState(false)
 
-  useState(() => {
+  useEffect(() => {
     db.collections.get(collectionId).then(col => {
       setCollection(col)
       setLoading(false)
     })
-  }, [])
+  }, [collectionId])
 
   function has(field) {
     return collection?.enabledFields?.includes(field)
   }
 
-  async function handlePhoto(e) {
-    const file = e.target.files[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = ev => setPhoto(ev.target.result)
-    reader.readAsDataURL(file)
-  }
-
   async function handleSave() {
     if (!name.trim()) return
     setSaving(true)
-    await db.items.add({
+    const n = quantityToAdd
+    const base = {
       collectionId,
-      name: name.trim(),
       status,
       condition:        condition || null,
       platform:         platform || null,
@@ -79,12 +74,16 @@ function AddItem({ collectionId, onNavigate }) {
       tags:             tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : [],
       quantity:         quantity ? parseInt(quantity) : null,
       notes:            notes || null,
-      photo:            photo || null,
+      photo:            photos[0] || null,
+      photos,
       customFieldValues,
       isDeleted:        false,
       createdAt:        Date.now(),
       updatedAt:        Date.now()
-    })
+    }
+    for (let i = 1; i <= n; i++) {
+      await db.items.add({ ...base, name: n > 1 ? `${name.trim()} (${i})` : name.trim() })
+    }
     onNavigate('collection', collectionId)
   }
 
@@ -111,6 +110,18 @@ function AddItem({ collectionId, onNavigate }) {
       </div>
 
       <div className="field-block">
+        <label className="label">Quantity to add</label>
+        <input
+          className="input"
+          type="number"
+          min="1"
+          max="20"
+          value={quantityToAdd}
+          onChange={e => setQuantityToAdd(Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
+        />
+      </div>
+
+      <div className="field-block">
         <label className="label">Status *</label>
         <div className="seg">
           {STATUS_OPTIONS.map(s => (
@@ -120,14 +131,7 @@ function AddItem({ collectionId, onNavigate }) {
       </div>
 
       {has('photo') && (
-        <div className="field-block">
-          <label className="label">Photo</label>
-          {photo && <img className="preview-img" src={photo} alt="preview" />}
-          <label className="file-input">
-            {photo ? 'Replace photo' : 'Take or choose a photo'}
-            <input type="file" accept="image/*" onChange={handlePhoto} hidden />
-          </label>
-        </div>
+        <PhotoPicker photos={photos} onChange={setPhotos} />
       )}
 
       {has('condition') && (
@@ -141,14 +145,29 @@ function AddItem({ collectionId, onNavigate }) {
         </div>
       )}
 
-      {text('platform', 'Platform / Variant', platform, setPlatform, 'e.g. PS2, Xbox 360')}
+      {has('platform') && (
+        <div className="field-block">
+          <label className="label">Platform / Variant</label>
+          <PlatformInput value={platform} onChange={setPlatform} placeholder="e.g. PS2, Xbox 360" />
+        </div>
+      )}
       {text('pricePaid', `Price Paid (${collection.currency})`, pricePaid, setPricePaid, '0', 'number')}
       {text('estimatedValue', `Estimated Value (${collection.currency})`, estimatedValue, setEstimatedValue, '0', 'number')}
       {status === 'sold' && text('priceSold', `Price Sold (${collection.currency})`, priceSold, setPriceSold, '0', 'number')}
-      {text('location', 'Location', location, setLocation, 'e.g. Shelf A2, Box B1')}
+      {has('location') && (
+        <div className="field-block">
+          <label className="label">Location</label>
+          <PlatformInput field="location" value={location} onChange={setLocation} placeholder="e.g. Shelf A2, Box B1" />
+        </div>
+      )}
       {text('storageUnit', 'Storage Unit', storageUnit, setStorageUnit, 'e.g. Bedroom shelf, Garage')}
       {text('purchaseDate', 'Purchase Date', purchaseDate, setPurchaseDate, '', 'date')}
-      {text('purchasedFrom', 'Purchased From', purchasedFrom, setPurchasedFrom, 'e.g. OLX, eBay, local market')}
+      {has('purchasedFrom') && (
+        <div className="field-block">
+          <label className="label">Purchased From</label>
+          <PlatformInput field="purchasedFrom" value={purchasedFrom} onChange={setPurchasedFrom} placeholder="e.g. OLX, eBay, local market" />
+        </div>
+      )}
       {status === 'sold' && text('soldDate', 'Sold Date', soldDate, setSoldDate, '', 'date')}
       {status === 'sold' && text('soldOn', 'Sold On', soldOn, setSoldOn, 'e.g. OLX, Facebook Marketplace')}
       {status === 'borrowed' && text('borrowedTo', 'Borrowed To', borrowedTo, setBorrowedTo, 'e.g. Andrei')}

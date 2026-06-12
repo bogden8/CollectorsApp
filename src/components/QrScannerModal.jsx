@@ -22,7 +22,7 @@ function QrScannerModal({ onClose, onResult }) {
         videoRef.current.srcObject = stream
         await videoRef.current.play()
         scan()
-      } catch (e) {
+      } catch {
         if (!cancelled) setError('Camera access denied. Please allow camera access in your browser settings.')
       }
     }

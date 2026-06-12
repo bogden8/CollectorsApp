@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { db } from '../db'
 import QRCode from 'qrcode'
 import Icon from '../icons'
+import ItemGallery from '../components/ItemGallery'
 
 function ItemDetail({ itemId, onNavigate }) {
   const [item, setItem] = useState(null)
@@ -36,17 +37,34 @@ function ItemDetail({ itemId, onNavigate }) {
     onNavigate('collection', item.collectionId)
   }
 
+  async function handleDuplicate() {
+    const clone = { ...item }
+    delete clone.id
+    clone.name = `${item.name} (copy)`
+    clone.createdAt = Date.now()
+    clone.updatedAt = Date.now()
+    clone.isDeleted = false
+    delete clone.deletedAt
+    const newId = await db.items.add(clone)
+    onNavigate('item', newId)
+  }
+
   function handlePrint() {
     const canvas = qrRef.current
     if (!canvas) return
+    const esc = s => String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
     const dataUrl = canvas.toDataURL()
     const win = window.open('')
     win.document.write(`
       <html><body style="text-align:center; font-family: sans-serif; padding: 40px;">
         <img src="${dataUrl}" style="width:200px;height:200px;" />
-        <p style="font-size:18px; font-weight:bold; margin-top:16px;">${item.name}</p>
-        ${item.platform ? `<p style="color:#666;">${item.platform}</p>` : ''}
-        ${item.location ? `<p style="color:#666;">📍 ${item.location}</p>` : ''}
+        <p style="font-size:18px; font-weight:bold; margin-top:16px;">${esc(item.name)}</p>
+        ${item.platform ? `<p style="color:#666;">${esc(item.platform)}</p>` : ''}
+        ${item.location ? `<p style="color:#666;">📍 ${esc(item.location)}</p>` : ''}
         <script>window.onload = () => { window.print(); window.close() }<` + `/script>
       </body></html>
     `)
@@ -73,9 +91,7 @@ function ItemDetail({ itemId, onNavigate }) {
         {item.isFavorite && <span className="fav fav--lg"><Icon.star /></span>}
       </header>
 
-      {item.photo
-        ? <img className="hero-img" src={item.photo} alt={item.name} />
-        : <div className="hero-ph">no photo</div>}
+      <ItemGallery photos={item.photos && item.photos.length > 0 ? item.photos : (item.photo ? [item.photo] : [])} name={item.name} />
 
       <div className="pillrow">
         <span className="pill" data-status={item.status}>{item.status}</span>
@@ -123,6 +139,7 @@ function ItemDetail({ itemId, onNavigate }) {
 
       <div className="action-row">
         <button className="btn btn--outline" onClick={() => onNavigate('editItem', item.id)}><Icon.edit /><span>Edit</span></button>
+        <button className="btn btn--outline" onClick={handleDuplicate}><Icon.copy /><span>Duplicate</span></button>
         <button className="btn btn--danger" onClick={handleDelete}><Icon.trash /><span>Delete</span></button>
       </div>
 
